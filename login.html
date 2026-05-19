@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<!-- PWA CORE SETUP -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b2e1a">
+<link rel="manifest" href="manifest.json">
+
+<title>GreenState Login</title>
+
+<style>
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #000000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: white;
+}
+
+.container {
+  width: 340px;
+  background: #0b2e1a;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  border: 1px solid #bfa100;
+}
+
+h2 {
+  text-align: center;
+  color: #d4af37;
+  margin-bottom: 25px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #145c32;
+  border-radius: 6px;
+  outline: none;
+  background: #062012;
+  color: white;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border: 1px solid #d4af37;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #145c32;
+  border: 1px solid #d4af37;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  color: #ffffff;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #0f3f22;
+  border-color: #ffd700;
+}
+
+.note {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 15px;
+  color: #d4af37;
+  opacity: 0.8;
+}
+
+.error {
+  color: #ff4d4d;
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 10px;
+  display: none;
+}
+
+/* SIGNUP LINK */
+.signup-link {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 13px;
+}
+
+.signup-link a {
+  color: #d4af37;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.signup-link a:hover {
+  color: #ffd700;
+  text-decoration: underline;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>GreenState Login</h2>
+
+<div class="error" id="errorBox"></div>
+
+<input type="email" id="email" placeholder="Email">
+
+<input type="password" id="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<!-- CREATE ACCOUNT LINK -->
+<div class="signup-link">
+  Don't have an account?
+  <a href="signup.html">Create a new account</a>
+</div>
+
+<div class="note">
+  Internal Staff Access Only
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+getAuth,
+signInWithEmailAndPassword
+}
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
+  authDomain: "greenstate-crm-8fc52.firebaseapp.com",
+  databaseURL: "https://greenstate-crm-8fc52-default-rtdb.firebaseio.com",
+  projectId: "greenstate-crm-8fc52",
+  storageBucket: "greenstate-crm-8fc52.firebasestorage.app",
+  messagingSenderId: "777482605823",
+  appId: "1:777482605823:web:dacce98855f0252cfce8ca"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const errorBox = document.getElementById("errorBox");
+
+window.login = function () {
+
+  const email = document.getElementById("email").value;
+
+  const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+
+    errorBox.style.display = "block";
+
+    errorBox.innerText = "Please fill all fields";
+
+    return;
+
+  }
+
+  signInWithEmailAndPassword(auth, email, password)
+
+    .then((userCredential) => {
+
+      alert("Login successful");
+
+      window.location.href = "dashboard.html";
+
+    })
+
+    .catch((error) => {
+
+      errorBox.style.display = "block";
+
+      errorBox.innerText = error.message;
+
+    });
+
+};
+
+/* SERVICE WORKER */
+if ("serviceWorker" in navigator) {
+
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("Service Worker Registered"));
+
+}
+
+</script>
+
+</body>
+</html>

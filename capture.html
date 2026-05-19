@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- PWA CORE SETUP -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b2e1a">
+<link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenState - Add Lead</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: white;
+      display: flex;
+      justify-content: center;
+      padding: 30px;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 600px;
+      background: #0b2e1a;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #bfa100;
+    }
+
+    h2 {
+      text-align: center;
+      color: #d4af37;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 13px;
+      color: #d4af37;
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 5px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #145c32;
+      background: #062012;
+      color: white;
+    }
+
+    textarea {
+      height: 80px;
+      resize: none;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      background: #145c32;
+      border: 1px solid #d4af37;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+    }
+
+    button:hover {
+      background: #0f3f22;
+    }
+
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+      color: #d4af37;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="form-container">
+
+    <h2>Add New Lead</h2>
+
+    <label>Business Name</label>
+    <input type="text" id="businessName">
+
+    <label>Contact Person</label>
+    <input type="text" id="contactPerson">
+
+    <label>Phone Number</label>
+    <input type="tel" id="phone">
+
+    <label>Location</label>
+    <input type="text" id="location">
+
+    <label>Service Interest</label>
+    <select id="service">
+      <option value="CCTV">CCTV</option>
+      <option value="Cybersecurity">Cybersecurity</option>
+      <option value="Website">Website Development</option>
+      <option value="IT Support">IT Support</option>
+      <option value="Social Media">Social Media Management</option>
+    </select>
+
+    <label>Status</label>
+    <select id="status">
+      <option value="New">New</option>
+      <option value="Follow-up">Follow-up</option>
+      <option value="Interested">Interested</option>
+      <option value="Closed">Closed</option>
+      <option value="Not Interested">Not Interested</option>
+    </select>
+
+    <label>Notes</label>
+    <textarea id="notes"></textarea>
+
+    <button onclick="saveLead()">Save Lead</button>
+
+    <a class="back" href="dashboard.html">← Back to Dashboard</a>
+
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // ✅ YOUR FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
+      authDomain: "greenstate-crm-8fc52.firebaseapp.com",
+      databaseURL: "https://greenstate-crm-8fc52-default-rtdb.firebaseio.com",
+      projectId: "greenstate-crm-8fc52",
+      storageBucket: "greenstate-crm-8fc52.appspot.com",
+      messagingSenderId: "777482605823",
+      appId: "1:777482605823:web:dacce98855f0252cfce8ca"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ✅ SAVE LEAD FUNCTION
+    window.saveLead = async function () {
+      const businessName = document.getElementById("businessName").value;
+      const contactPerson = document.getElementById("contactPerson").value;
+      const phone = document.getElementById("phone").value;
+      const location = document.getElementById("location").value;
+      const service = document.getElementById("service").value;
+      const status = document.getElementById("status").value;
+      const notes = document.getElementById("notes").value;
+
+      if (!businessName || !phone) {
+        alert("Business Name and Phone are required");
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "leads"), {
+          businessName,
+          contactPerson,
+          phone,
+          location,
+          service,
+          status,
+          notes,
+          createdAt: new Date()
+        });
+
+        alert("Lead saved successfully!");
+
+        // clear form
+        document.querySelectorAll("input, textarea").forEach(el => el.value = "");
+
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
+    };
+    
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("Service Worker Registered"));
+}
+</script>  </script>
+
+</body>
+</html>

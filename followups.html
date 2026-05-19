@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- PWA CORE SETUP -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b2e1a">
+<link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenState Follow-Ups</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: white;
+      display: flex;
+    }
+
+    .sidebar {
+      width: 220px;
+      height: 100vh;
+      background: #0b0b0b;
+      padding: 20px;
+      box-sizing: border-box;
+      border-right: 1px solid #1a1a1a;
+    }
+
+    .sidebar h2 {
+      color: #00c853;
+      margin-bottom: 25px;
+    }
+
+    .sidebar a {
+      display: block;
+      color: #d4af37;
+      text-decoration: none;
+      margin: 12px 0;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .sidebar a:hover {
+      background: #111;
+    }
+
+    .main {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      color: #00c853;
+    }
+
+    .add-btn {
+      background: #d4af37;
+      color: black;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #0f0f0f;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #1f1f1f;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    th {
+      background: #111;
+      color: #00c853;
+    }
+
+    .status {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      color: black;
+    }
+
+    .pending {
+      background: #d4af37;
+    }
+
+    .completed {
+      background: #00c853;
+    }
+
+    .priority {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .high { background: #ff4d4d; color: white; }
+    .medium { background: #d4af37; color: black; }
+    .low { background: #555; color: white; }
+  </style>
+</head>
+
+<body>
+
+  <div class="sidebar">
+    <h2>GreenState</h2>
+
+    <a href="dashboard.html">Dashboard</a>
+    <a href="capture.html">Add Lead</a>
+    <a href="followups.html">Follow-Ups</a>
+  </div>
+
+  <div class="main">
+
+    <div class="header">
+      <h1>Follow-Up Tracker</h1>
+
+      <button class="add-btn" onclick="window.location.href='capture.html'">
+        + Add Lead
+      </button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Business</th>
+          <th>Contact</th>
+          <th>Service</th>
+          <th>Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+
+      <tbody id="followupTable"></tbody>
+    </table>
+
+  </div>
+
+  <!-- FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
+      authDomain: "greenstate-crm-8fc52.firebaseapp.com",
+      databaseURL: "https://greenstate-crm-8fc52-default-rtdb.firebaseio.com",
+      projectId: "greenstate-crm-8fc52",
+      storageBucket: "greenstate-crm-8fc52.appspot.com",
+      messagingSenderId: "777482605823",
+      appId: "1:777482605823:web:dacce98855f0252cfce8ca"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadFollowUps() {
+      const querySnapshot = await getDocs(collection(db, "leads"));
+
+      const table = document.getElementById("followupTable");
+      table.innerHTML = "";
+
+      querySnapshot.forEach((doc) => {
+        const lead = doc.data();
+
+        table.innerHTML += `
+          <tr>
+            <td>${lead.businessName}</td>
+            <td>${lead.phone}</td>
+            <td>${lead.service}</td>
+            <td><span class="status pending">${lead.status}</span></td>
+            <td>${lead.notes || "No notes"}</td>
+          </tr>
+        `;
+      });
+    }
+
+    loadFollowUps();
+    if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("Service Worker Registered"));
+}
+  </script>
+
+</body>
+</html>

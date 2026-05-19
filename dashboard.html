@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<!-- PWA CORE SETUP -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b2e1a">
+<link rel="manifest" href="manifest.json">
+
+<title>GreenState CRM Dashboard</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0a0a0a;
+  color:white;
+  display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:220px;
+  height:100vh;
+  background:#0f0f0f;
+  padding:25px 20px;
+  border-right:1px solid #1f1f1f;
+  box-sizing:border-box;
+}
+
+.sidebar h2{
+  color:#00c853;
+  margin-bottom:35px;
+}
+
+.sidebar a{
+  display:block;
+  color:#d4af37;
+  margin:18px 0;
+  text-decoration:none;
+  font-size:14px;
+  padding:10px;
+  border-radius:6px;
+  transition:0.3s;
+}
+
+.sidebar a:hover{
+  background:#1a1a1a;
+}
+
+/* MAIN */
+.main{
+  flex:1;
+  padding:20px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+h1{
+  color:#00c853;
+}
+
+/* LOGOUT BUTTON */
+.logout-btn{
+  background:#d4af37;
+  color:black;
+  border:none;
+  padding:10px 15px;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.logout-btn:hover{
+  background:#ffd700;
+}
+
+/* FILTERS */
+.filters{
+  margin-bottom:20px;
+}
+
+button{
+  cursor:pointer;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+  margin:20px 0;
+}
+
+.card{
+  background:#111;
+  padding:15px;
+  border-left:4px solid #00c853;
+  border-radius:8px;
+}
+
+.card p{
+  color:#d4af37;
+  font-size:22px;
+}
+
+/* TABLE */
+table{
+  width:100%;
+  background:#111;
+  border-collapse:collapse;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+th,td{
+  padding:12px;
+  border-bottom:1px solid #222;
+  font-size:13px;
+}
+
+th{
+  color:#00c853;
+  background:#0f0f0f;
+  text-align:left;
+}
+
+.action-btn{
+  padding:6px 10px;
+  margin:2px;
+  border:none;
+  border-radius:5px;
+  font-size:12px;
+}
+
+.edit{
+  background:#d4af37;
+}
+
+.delete{
+  background:red;
+  color:white;
+}
+
+input,select{
+  padding:8px;
+  margin-right:8px;
+  background:#000;
+  color:white;
+  border:1px solid #333;
+  border-radius:5px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<h2>GreenState</h2>
+
+<a href="dashboard.html">Dashboard</a>
+
+<a href="capture.html">Add Leads</a>
+
+<a href="followups.html">Follow-Ups</a>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<div class="header">
+
+<h1>CRM Dashboard</h1>
+
+<button class="logout-btn" onclick="logout()">
+Logout
+</button>
+
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+
+<input type="text" id="search" placeholder="Search business...">
+
+<select id="filterStatus">
+  <option value="">All Status</option>
+  <option value="New">New</option>
+  <option value="Follow-up">Follow-up</option>
+  <option value="Closed">Closed</option>
+</select>
+
+</div>
+
+<!-- STATS -->
+<div class="stats">
+
+  <div class="card">
+    <h3>Total Leads</h3>
+    <p id="total">0</p>
+  </div>
+
+  <div class="card">
+    <h3>Follow-ups</h3>
+    <p id="follow">0</p>
+  </div>
+
+  <div class="card">
+    <h3>Closed</h3>
+    <p id="closed">0</p>
+  </div>
+
+</div>
+
+<!-- TABLE -->
+<table>
+
+<thead>
+<tr>
+<th>Business</th>
+<th>Phone</th>
+<th>Service</th>
+<th>Status</th>
+<th>Assigned</th>
+<th>Actions</th>
+</tr>
+</thead>
+
+<tbody id="table"></tbody>
+
+</table>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+onSnapshot,
+doc,
+updateDoc,
+deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import {
+getAuth,
+signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
+authDomain: "greenstate-crm-8fc52.firebaseapp.com",
+databaseURL: "https://greenstate-crm-8fc52-default-rtdb.firebaseio.com",
+projectId: "greenstate-crm-8fc52",
+storageBucket: "greenstate-crm-8fc52.appspot.com",
+messagingSenderId: "777482605823",
+appId: "1:777482605823:web:dacce98855f0252cfce8ca"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const auth = getAuth(app);
+
+let allLeads = [];
+
+const table = document.getElementById("table");
+
+/* RENDER TABLE */
+function render(data){
+
+table.innerHTML = "";
+
+data.forEach((lead)=>{
+
+table.innerHTML += `
+<tr>
+<td>${lead.businessName}</td>
+<td>${lead.phone}</td>
+<td>${lead.service}</td>
+<td>${lead.status}</td>
+<td>${lead.assignedTo || "Unassigned"}</td>
+<td>
+<button class="action-btn edit" onclick="editLead('${lead.id}')">Edit</button>
+
+<button class="action-btn delete" onclick="removeLead('${lead.id}')">Delete</button>
+</td>
+</tr>
+`;
+
+});
+
+document.getElementById("total").innerText = data.length;
+
+document.getElementById("follow").innerText =
+data.filter(l=>l.status==="Follow-up").length;
+
+document.getElementById("closed").innerText =
+data.filter(l=>l.status==="Closed").length;
+
+}
+
+/* REALTIME FIRESTORE */
+onSnapshot(collection(db,"leads"), (snapshot)=>{
+
+allLeads = snapshot.docs.map(doc=>({
+id:doc.id,
+...doc.data()
+}));
+
+render(allLeads);
+
+});
+
+/* DELETE */
+window.removeLead = async function(id){
+
+await deleteDoc(doc(db,"leads",id));
+
+}
+
+/* EDIT */
+window.editLead = async function(id){
+
+let status = prompt("New Status (New / Follow-up / Closed):");
+
+let assignedTo = prompt("Assign To:");
+
+await updateDoc(doc(db,"leads",id),{
+status,
+assignedTo
+});
+
+}
+
+/* SEARCH FILTER */
+document.getElementById("search")
+.addEventListener("input",(e)=>{
+
+let val = e.target.value.toLowerCase();
+
+let filtered = allLeads.filter(l =>
+l.businessName.toLowerCase().includes(val)
+);
+
+render(filtered);
+
+});
+
+/* STATUS FILTER */
+document.getElementById("filterStatus")
+.addEventListener("change",(e)=>{
+
+let val = e.target.value;
+
+if(!val) return render(allLeads);
+
+render(allLeads.filter(l=>l.status===val));
+
+});
+
+/* LOGOUT */
+window.logout = async function(){
+
+await signOut(auth);
+
+alert("Logged out successfully");
+
+window.location.href = "login.html";
+
+}
+
+/* SERVICE WORKER */
+if ("serviceWorker" in navigator) {
+
+navigator.serviceWorker.register("sw.js")
+.then(() => console.log("Service Worker Registered"));
+
+}
+
+</script>
+
+</body>
+</html>

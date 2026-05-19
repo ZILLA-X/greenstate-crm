@@ -1,0 +1,12 @@
+/greenstate-system
+│
+├── index.html
+├── login.html
+├── dashboard.html
+├── capture.html
+├── leads.html
+│
+├── /css
+├── /js
+├── /assets
+└── /firebase-config
