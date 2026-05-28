@@ -126,9 +126,11 @@
   <div class="sidebar">
     <h2>GreenState</h2>
 
-    <a href="dashboard.html">Dashboard</a>
-    <a href="capture.html">Add Lead</a>
-    <a href="followups.html">Follow-Ups</a>
+    <a href="dashboard.html"> Dashboard</a>
+  <a href="capture.html"> Add Lead</a>
+  <a href="followups.html"> Follow-Ups</a>
+  <a href="analytics.html"> Analytics</a>
+  <a href="client.html"> Clients</a>
   </div>
 
   <div class="main">
@@ -201,6 +203,10 @@
     if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js")
     .then(() => console.log("Service Worker Registered"));
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
 }
   </script>
 

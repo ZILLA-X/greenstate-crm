@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
+  <button id="installBtn" style="
+  background:#00c853;
+  color:black;
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+  margin-right:10px;
+  display:none;
+">
+Install App
+</button>
 <!-- PWA CORE SETUP -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -157,6 +167,54 @@ input,select{
   border:1px solid #333;
   border-radius:5px;
 }
+@media (max-width: 768px) {
+
+  body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  .sidebar a {
+    margin: 0;
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  .main {
+    padding: 10px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  th, td {
+    font-size: 12px;
+  }
+}
 
 </style>
 </head>
@@ -168,12 +226,11 @@ input,select{
 
 <h2>GreenState</h2>
 
-<a href="dashboard.html">Dashboard</a>
-
-<a href="capture.html">Add Leads</a>
-
-<a href="followups.html">Follow-Ups</a>
-
+<a href="dashboard.html"> Dashboard</a>
+  <a href="capture.html"> Add Lead</a>
+  <a href="followups.html"> Follow-Ups</a>
+  <a href="analytics.html"> Analytics</a>
+  <a href="client.html"> Clients</a>
 </div>
 
 <!-- MAIN -->
@@ -243,157 +300,161 @@ Logout
 
 </div>
 
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
 import {
-getFirestore,
-collection,
-onSnapshot,
-doc,
-updateDoc,
-deleteDoc
+  getFirestore,
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import {
-getAuth,
-signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
 const firebaseConfig = {
-apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
-authDomain: "greenstate-crm-8fc52.firebaseapp.com",
-databaseURL: "https://greenstate-crm-8fc52-default-rtdb.firebaseio.com",
-projectId: "greenstate-crm-8fc52",
-storageBucket: "greenstate-crm-8fc52.appspot.com",
-messagingSenderId: "777482605823",
-appId: "1:777482605823:web:dacce98855f0252cfce8ca"
+  apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
+  authDomain: "greenstate-crm-8fc52.firebaseapp.com",
+  databaseURL: "https://greenstate-crm-8fc52-default-rtdb.firebaseio.com",
+  projectId: "greenstate-crm-8fc52",
+  storageBucket: "greenstate-crm-8fc52.appspot.com",
+  messagingSenderId: "777482605823",
+  appId: "1:777482605823:web:dacce98855f0252cfce8ca"
 };
 
 const app = initializeApp(firebaseConfig);
-
 const db = getFirestore(app);
 
-const auth = getAuth(app);
-
 let allLeads = [];
-
 const table = document.getElementById("table");
 
-/* RENDER TABLE */
+// ✅ HARD FIX: ensure single active listener reference
+let unsubscribe = null;
+
 function render(data){
 
-table.innerHTML = "";
+  table.innerHTML = "";
 
-data.forEach((lead)=>{
+  data.forEach((lead)=>{
 
-table.innerHTML += `
-<tr>
-<td>${lead.businessName}</td>
-<td>${lead.phone}</td>
-<td>${lead.service}</td>
-<td>${lead.status}</td>
-<td>${lead.assignedTo || "Unassigned"}</td>
-<td>
-<button class="action-btn edit" onclick="editLead('${lead.id}')">Edit</button>
+    table.innerHTML += `
+      <tr>
+        <td>${lead.businessName || ""}</td>
+        <td>${lead.phone || ""}</td>
+        <td>${lead.service || ""}</td>
+        <td>${lead.status || ""}</td>
+        <td>${lead.assignedTo || "Unassigned"}</td>
+        <td>
+          <button class="action-btn edit" onclick="editLead('${lead.id}')">Edit</button>
+          <button class="action-btn delete" onclick="removeLead('${lead.id}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
 
-<button class="action-btn delete" onclick="removeLead('${lead.id}')">Delete</button>
-</td>
-</tr>
-`;
+  document.getElementById("total").innerText = data.length;
+  document.getElementById("follow").innerText =
+    data.filter(l => l.status === "Follow-up").length;
 
-});
-
-document.getElementById("total").innerText = data.length;
-
-document.getElementById("follow").innerText =
-data.filter(l=>l.status==="Follow-up").length;
-
-document.getElementById("closed").innerText =
-data.filter(l=>l.status==="Closed").length;
-
+  document.getElementById("closed").innerText =
+    data.filter(l => l.status === "Closed").length;
 }
 
-/* REALTIME FIRESTORE */
-onSnapshot(collection(db,"leads"), (snapshot)=>{
+// 🔥 ONLY ONE ACTIVE FIRESTORE LISTENER
+function startListener() {
 
-allLeads = snapshot.docs.map(doc=>({
-id:doc.id,
-...doc.data()
-}));
+  if (unsubscribe) {
+    unsubscribe(); // prevents duplicates completely
+  }
 
-render(allLeads);
+  unsubscribe = onSnapshot(collection(db, "leads"), (snapshot)=>{
 
-});
+    const leads = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-/* DELETE */
+    allLeads = leads;
+
+    render(allLeads);
+  });
+}
+
+// START LISTENER ONCE
+startListener();
+
+// DELETE
 window.removeLead = async function(id){
-
-await deleteDoc(doc(db,"leads",id));
-
+  await deleteDoc(doc(db, "leads", id));
 }
 
-/* EDIT */
+// EDIT
 window.editLead = async function(id){
 
-let status = prompt("New Status (New / Follow-up / Closed):");
+  let status = prompt("New Status (New / Follow-up / Closed):");
+  let assignedTo = prompt("Assign To:");
 
-let assignedTo = prompt("Assign To:");
+  if(!status && !assignedTo) return;
 
-await updateDoc(doc(db,"leads",id),{
-status,
-assignedTo
-});
-
+  await updateDoc(doc(db, "leads", id), {
+    status,
+    assignedTo
+  });
 }
 
-/* SEARCH FILTER */
-document.getElementById("search")
-.addEventListener("input",(e)=>{
+// SEARCH
+document.getElementById("search").addEventListener("input",(e)=>{
 
-let val = e.target.value.toLowerCase();
+  let val = e.target.value.toLowerCase();
 
-let filtered = allLeads.filter(l =>
-l.businessName.toLowerCase().includes(val)
-);
+  let filtered = allLeads.filter(l =>
+    (l.businessName || "").toLowerCase().includes(val)
+  );
 
-render(filtered);
-
+  render(filtered);
 });
 
-/* STATUS FILTER */
-document.getElementById("filterStatus")
-.addEventListener("change",(e)=>{
+// FILTER
+document.getElementById("filterStatus").addEventListener("change",(e)=>{
 
-let val = e.target.value;
+  let val = e.target.value;
 
-if(!val) return render(allLeads);
+  if(!val) return render(allLeads);
 
-render(allLeads.filter(l=>l.status===val));
-
+  render(allLeads.filter(l => l.status === val));
 });
 
-/* LOGOUT */
-window.logout = async function(){
+let deferredPrompt;
 
-await signOut(auth);
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
 
-alert("Logged out successfully");
+  document.getElementById("installBtn").style.display = "inline-block";
+});
 
-window.location.href = "login.html";
+document.getElementById("installBtn").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
 
-}
+  deferredPrompt.prompt();
 
-/* SERVICE WORKER */
+  const choice = await deferredPrompt.userChoice;
+
+  if (choice.outcome === "accepted") {
+    console.log("App installed");
+  }
+
+  deferredPrompt = null;
+});
+
 if ("serviceWorker" in navigator) {
-
-navigator.serviceWorker.register("sw.js")
-.then(() => console.log("Service Worker Registered"));
-
+  navigator.serviceWorker.register("service-worker.js");
 }
-
 </script>
+
+
 
 </body>
 </html>

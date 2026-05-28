@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b2e1a">
+<title>GreenState Analytics</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0a0a0a;
+  color:white;
+  display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:220px;
+  height:100vh;
+  background:#0f0f0f;
+  padding:20px;
+  border-right:1px solid #1f1f1f;
+}
+
+.sidebar h2{
+  color:#00c853;
+  margin-bottom:25px;
+}
+
+.sidebar a{
+  display:block;
+  color:#d4af37;
+  text-decoration:none;
+  margin:12px 0;
+  padding:8px;
+  border-radius:6px;
+}
+
+.sidebar a:hover{
+  background:#1a1a1a;
+}
+
+/* MAIN */
+.main{
+  flex:1;
+  padding:20px;
+}
+
+h1{
+  color:#00c853;
+}
+
+/* STATS */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+  margin:20px 0;
+}
+
+.card{
+  background:#111;
+  padding:15px;
+  border-left:4px solid #00c853;
+  border-radius:8px;
+}
+
+.card h3{
+  font-size:13px;
+  color:#aaa;
+}
+
+.card p{
+  font-size:22px;
+  color:#d4af37;
+}
+
+/* CHART */
+.chart-box{
+  background:#111;
+  padding:20px;
+  border-radius:10px;
+  margin-top:20px;
+}
+
+@media(max-width:768px){
+  body{flex-direction:column;}
+  .sidebar{width:100%; height:auto; display:flex; justify-content:space-around;}
+  .stats{grid-template-columns:1fr 1fr;}
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+  <h2>GreenState</h2>
+
+  <a href="dashboard.html"> Dashboard</a>
+  <a href="capture.html"> Add Lead</a>
+  <a href="followups.html"> Follow-Ups</a>
+  <a href="analytics.html"> Analytics</a>
+  <a href="client.html"> Clients</a>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<h1>Analytics Dashboard</h1>
+
+<!-- STATS -->
+<div class="stats">
+
+  <div class="card">
+    <h3>Total Leads</h3>
+    <p id="totalLeads">0</p>
+  </div>
+
+  <div class="card">
+    <h3>Closed Deals</h3>
+    <p id="closedDeals">0</p>
+  </div>
+
+  <div class="card">
+    <h3>Follow-Ups</h3>
+    <p id="followUps">0</p>
+  </div>
+
+  <div class="card">
+    <h3>Conversion Rate</h3>
+    <p id="conversion">0%</p>
+  </div>
+
+</div>
+
+<!-- CHART -->
+<div class="chart-box">
+  <canvas id="serviceChart"></canvas>
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, onSnapshot } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
+  authDomain: "greenstate-crm-8fc52.firebaseapp.com",
+  databaseURL: "https://greenstate-crm-8fc52-default-rtdb.firebaseio.com",
+  projectId: "greenstate-crm-8fc52",
+  storageBucket: "greenstate-crm-8fc52.appspot.com",
+  messagingSenderId: "777482605823",
+  appId: "1:777482605823:web:dacce98855f0252cfce8ca"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let chart;
+
+function updateStats(leads){
+
+  const total = leads.length;
+  const closed = leads.filter(l => l.status === "Closed").length;
+  const follow = leads.filter(l => l.status === "Follow-up").length;
+
+  const conversion = total ? ((closed / total) * 100).toFixed(1) : 0;
+
+  document.getElementById("totalLeads").innerText = total;
+  document.getElementById("closedDeals").innerText = closed;
+  document.getElementById("followUps").innerText = follow;
+  document.getElementById("conversion").innerText = conversion + "%";
+}
+
+function updateChart(leads){
+
+  const services = {};
+
+  leads.forEach(l => {
+    services[l.service] = (services[l.service] || 0) + 1;
+  });
+
+  const labels = Object.keys(services);
+  const data = Object.values(services);
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("serviceChart"), {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Service Demand",
+        data: data,
+        backgroundColor: "#00c853"
+      }]
+    },
+    options: {
+      responsive:true,
+      plugins:{
+        legend:{display:false}
+      }
+    }
+  });
+}
+
+// REALTIME FIRESTORE
+onSnapshot(collection(db,"leads"), (snapshot)=>{
+
+  const leads = snapshot.docs.map(doc => doc.data());
+
+  updateStats(leads);
+  updateChart(leads);
+
+});
+
+</script>
+
+</body>
+</html>

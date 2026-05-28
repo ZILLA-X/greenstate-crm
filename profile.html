@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Profile</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0a0a0a;
+  color:white;
+}
+
+/* HEADER */
+.header{
+  padding:20px;
+  background:#111;
+  border-bottom:1px solid #222;
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.avatar{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#00c853,#145c32);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:32px;
+  font-weight:bold;
+  color:black;
+}
+
+/* CONTENT */
+.container{
+  padding:20px;
+  max-width:900px;
+  margin:auto;
+}
+
+.section{
+  background:#111;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:15px;
+  border:1px solid rgba(255,255,255,0.05);
+}
+
+.section h3{
+  color:#00c853;
+  margin-top:0;
+}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+.full{
+  grid-column:1/3;
+}
+
+/* INPUTS */
+label{
+  display:block;
+  font-size:12px;
+  margin-bottom:5px;
+  color:#d4af37;
+}
+
+input,
+textarea,
+select{
+  width:100%;
+  padding:12px;
+  background:#000;
+  border:1px solid #333;
+  color:white;
+  border-radius:8px;
+  box-sizing:border-box;
+}
+
+textarea{
+  min-height:100px;
+  resize:none;
+}
+
+/* BUTTON */
+button{
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.save{
+  background:#00c853;
+  color:black;
+}
+
+.delete{
+  background:red;
+  color:white;
+}
+
+.top-buttons{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .full{
+    grid-column:1/2;
+  }
+
+  .header{
+    flex-direction:column;
+    text-align:center;
+  }
+
+}
+.back-btn{
+  background:#111;
+  color:#d4af37;
+  border:1px solid #d4af37;
+  padding:10px 16px;
+  border-radius:10px;
+  cursor:pointer;
+  margin-bottom:20px;
+  font-weight:bold;
+  transition:0.3s;
+}
+
+.back-btn:hover{
+  background:#d4af37;
+  color:black;
+}
+
+</style>
+</head>
+
+<body>
+<button class="back-btn" onclick="window.location.href='client.html'">
+← Back to Clients
+</button>
+
+<div class="header">
+
+<div class="avatar" id="avatar">
+?</div>
+
+<div>
+<h1 id="businessName">
+Loading...
+</h1>
+
+<p id="serviceText"></p>
+</div>
+
+</div>
+
+<div class="container">
+
+<!-- BASIC INFO -->
+<div class="section">
+
+<h3>Client Information</h3>
+
+<div class="grid">
+
+<div>
+<label>Business Name</label>
+<input id="business">
+</div>
+
+<div>
+<label>Contact Person</label>
+<input id="contact">
+</div>
+
+<div>
+<label>Phone Number</label>
+<input id="phone">
+</div>
+
+<div>
+<label>Email</label>
+<input id="email">
+</div>
+
+<div class="full">
+<label>Location</label>
+<input id="location">
+</div>
+
+</div>
+
+</div>
+
+<!-- BUSINESS -->
+<div class="section">
+
+<h3>Business Assessment</h3>
+
+<div class="grid">
+
+<div>
+<label>Service Needed</label>
+<input id="service">
+</div>
+
+<div>
+<label>Status</label>
+<select id="status">
+<option>New</option>
+<option>Follow-up</option>
+<option>Interested</option>
+<option>Closed</option>
+</select>
+</div>
+
+<div class="full">
+<label>Problems Identified</label>
+<textarea id="problems"></textarea>
+</div>
+
+<div class="full">
+<label>Meeting Notes</label>
+<textarea id="notes"></textarea>
+</div>
+
+</div>
+
+</div>
+
+<!-- FOLLOW-UP -->
+<div class="section">
+
+<h3>Follow-Up</h3>
+
+<div class="grid">
+
+<div>
+<label>Next Follow-Up</label>
+<input type="date" id="followup">
+</div>
+
+<div>
+<label>Assigned Staff</label>
+<input id="assignedTo">
+</div>
+
+</div>
+
+<div class="top-buttons">
+
+<button class="save" onclick="saveClient()">
+Save Changes
+</button>
+
+<button class="delete" onclick="deleteClient()">
+Delete Client
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDEogWvYWrOZpT1lScqRfM3o0MY2_DhSuM",
+  authDomain: "greenstate-crm-8fc52.firebaseapp.com",
+  projectId: "greenstate-crm-8fc52",
+  storageBucket: "greenstate-crm-8fc52.appspot.com",
+  messagingSenderId: "777482605823",
+  appId: "1:777482605823:web:dacce98855f0252cfce8ca"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const params = new URLSearchParams(window.location.search);
+const clientId = params.get("id");
+
+const clientRef = doc(db,"leads",clientId);
+
+/* LOAD CLIENT */
+async function loadClient(){
+
+  const snap = await getDoc(clientRef);
+
+  if(!snap.exists()){
+    alert("Client not found");
+    return;
+  }
+
+  const c = snap.data();
+
+  document.getElementById("businessName").innerText =
+    c.businessName || "No Name";
+
+  document.getElementById("serviceText").innerText =
+    c.service || "";
+
+  document.getElementById("avatar").innerText =
+    c.businessName ? c.businessName.charAt(0).toUpperCase() : "?";
+
+  document.getElementById("business").value =
+    c.businessName || "";
+
+  document.getElementById("contact").value =
+    c.contactPerson || "";
+
+  document.getElementById("phone").value =
+    c.phone || "";
+
+  document.getElementById("email").value =
+    c.email || "";
+
+  document.getElementById("location").value =
+    c.location || "";
+
+  document.getElementById("service").value =
+    c.service || "";
+
+  document.getElementById("status").value =
+    c.status || "New";
+
+  document.getElementById("problems").value =
+    c.problems || "";
+
+  document.getElementById("notes").value =
+    c.notes || "";
+
+  document.getElementById("followup").value =
+    c.followupDate || "";
+
+  document.getElementById("assignedTo").value =
+    c.assignedTo || "";
+}
+
+loadClient();
+
+/* SAVE */
+window.saveClient = async function(){
+
+  await updateDoc(clientRef,{
+    businessName: document.getElementById("business").value,
+    contactPerson: document.getElementById("contact").value,
+    phone: document.getElementById("phone").value,
+    email: document.getElementById("email").value,
+    location: document.getElementById("location").value,
+    service: document.getElementById("service").value,
+    status: document.getElementById("status").value,
+    problems: document.getElementById("problems").value,
+    notes: document.getElementById("notes").value,
+    followupDate: document.getElementById("followup").value,
+    assignedTo: document.getElementById("assignedTo").value
+  });
+
+  alert("Client updated successfully");
+}
+
+/* DELETE */
+window.deleteClient = async function(){
+
+  if(confirm("Delete this client?")){
+
+    await deleteDoc(clientRef);
+
+    window.location.href = "client.html";
+  }
+}
+
+</script>
+
+</body>
+</html>
